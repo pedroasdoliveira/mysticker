@@ -1,6 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import { Image, SafeAreaView, ScrollView, TextInput, View } from "react-native";
+import {
+  Image,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Camera, CameraType } from "expo-camera";
+import { captureRef } from "react-native-view-shot";
+import * as Sharing from "expo-sharing";
 import { Header } from "../components/Header";
 import { Button } from "../components/Button";
 import { PositionChoice } from "../components/PositionChoice";
@@ -16,10 +26,16 @@ export function Home() {
   const [photoURI, setPhotoURI] = useState<null | string>(null);
 
   const cameraRef = useRef<Camera>(null);
+  const screenShotRef = useRef(null);
 
   const handleTakePicture = async () => {
     const photo = await cameraRef.current.takePictureAsync();
-    setPhotoURI(photo.uri)
+    setPhotoURI(photo.uri);
+  };
+
+  const shareScreenSort = async () => {
+    const screenShot = await captureRef(screenShotRef);
+    await Sharing.shareAsync("file://" + screenShot);
   };
 
   useEffect(() => {
@@ -34,7 +50,7 @@ export function Home() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View>
+        <View ref={screenShotRef} style={styles.sticker}>
           <Header position={positionSelected} />
 
           <View style={styles.picture}>
@@ -47,9 +63,12 @@ export function Home() {
             ) : (
               <Image
                 source={{
-                  uri: photoURI ? photoURI : "https://filestore.community.support.microsoft.com/api/images/354ad963-3130-4924-b870-71a46b54fb4a?upload=true",
+                  uri: photoURI
+                    ? photoURI
+                    : "https://filestore.community.support.microsoft.com/api/images/354ad963-3130-4924-b870-71a46b54fb4a?upload=true",
                 }}
                 style={styles.camera}
+                onLoad={shareScreenSort}
               />
             )}
 
@@ -66,6 +85,10 @@ export function Home() {
           onChangePosition={setPositionSelected}
           positionSelected={positionSelected}
         />
+
+        <TouchableOpacity onPress={() => setPhotoURI(null)}>
+          <Text style={styles.retry}>Nova foto</Text>
+        </TouchableOpacity>
 
         <Button title="Compartilhar" onPress={handleTakePicture} />
       </ScrollView>
